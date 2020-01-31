@@ -1,47 +1,42 @@
 import React from "react";
-import "./App.css";
+import { compose } from "ramda";
+import { createStore } from "redux";
+import { Provider, connect, useSelector } from "react-redux";
+import * as most from "most";
+import users from "./users";
 
-const userApi = "https://randomuser.me/api/";
-
-const CHANGE_PAGE = "EVENT/CHANGE_PAGE";
-const initialState = { page: 1 };
-
-function changePageReducer(state, action) {
-  switch (action.type) {
-    case CHANGE_PAGE:
-      return { page: state.page + 1 };
-    default:
-      return state;
-  }
-}
-
-const UserData = ({ user }) => {
-  return (
-    <>
-      <h3> {user.name.first}</h3>
-      <h3> {user.email}</h3>
-      <img src={user.picture.large} alt={user.email} />
-    </>
-  );
-};
+import {
+  select,
+  createEpicMiddleware,
+  createStateStreamEnhancer
+} from "redux-most";
 
 const User = ({ user }) => {
   return (
     <div>
       <h1>User Component</h1>
-      <UserData user={user} />
+      <h3> {user.name.first}</h3>
+      <h3> {user.email}</h3>
+      <img src={user.picture.large} alt={user.email} />
     </div>
   );
 };
 
-function App() {
-  const user = null;
+const UserList = ({ users }) => users.map(user => <User user={user} />);
+
+const withUsers = AppComponent => {
+  const userList = users.results;
+  //data loader component
+  return <AppComponent users={userList} />;
+};
+
+function App({ users }) {
   return (
     <div className="App">
-      {user && <User user={user} />}
-      <button>Change Page</button>
+      <h1> Our amazing App </h1>
+      <UserList users={users} />;
     </div>
   );
 }
 
-export default App;
+export default () => withUsers(App);

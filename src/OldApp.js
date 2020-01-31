@@ -37,7 +37,7 @@ const User = ({ user }) => {
 const changePageAction = dispatch => () => dispatch({ type: CHANGE_PAGE });
 
 function App() {
-  const [stAte, dispatch] = useReducer(changePageReducer, initialState);
+  const [state, dispatch] = useReducer(changePageReducer, initialState);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -49,7 +49,7 @@ function App() {
         setUser(u);
       })
       .catch(console.log);
-  }, []);
+  }, [state.page]);
 
   return (
     <div className="App">
