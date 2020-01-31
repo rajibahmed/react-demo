@@ -1,26 +1,41 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useState } from "react";
+import "./App.css";
 
-function App() {
+const userApi = "https://randomuser.me/api/";
+
+const UserData = ({ user, children }) => {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <>
+      <h3> {user.name.first}</h3>
+      <h3> {user.email}</h3>
+      {children}
+    </>
+  );
+};
+
+const User = ({ user }) => {
+  return (
+    <div>
+      <h1>User Component</h1>
+      <UserData user={user} />
     </div>
   );
+};
+
+function App() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    fetch(userApi)
+      .then(res => res.json())
+      .then(data => {
+        const u = data.results[0];
+        setUser(u);
+      })
+      .catch(err => console.log);
+  }, []);
+
+  return <div className="App">{user && <User user={user} />}</div>;
 }
 
 export default App;
