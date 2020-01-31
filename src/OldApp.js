@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState, useReducer } from "react";
 import "./App.css";
 
 const userApi = "https://randomuser.me/api/";
@@ -15,7 +15,7 @@ function changePageReducer(state, action) {
   }
 }
 
-const UserData = ({ user }) => {
+const UserData = ({ user, children }) => {
   return (
     <>
       <h3> {user.name.first}</h3>
@@ -34,12 +34,27 @@ const User = ({ user }) => {
   );
 };
 
+const changePageAction = dispatch => () => dispatch({ type: CHANGE_PAGE });
+
 function App() {
-  const user = null;
+  const [stAte, dispatch] = useReducer(changePageReducer, initialState);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    let api = userApi + "?page=" + state.page;
+    fetch(api)
+      .then(res => res.json())
+      .then(data => {
+        const u = data.results[0];
+        setUser(u);
+      })
+      .catch(console.log);
+  }, []);
+
   return (
     <div className="App">
       {user && <User user={user} />}
-      <button>Change Page</button>
+      <button onClick={changePageAction(dispatch)}>Change Page</button>
     </div>
   );
 }
