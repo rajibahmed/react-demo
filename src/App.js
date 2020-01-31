@@ -3,40 +3,107 @@ import { compose } from "ramda";
 import { createStore } from "redux";
 import { Provider, connect, useSelector } from "react-redux";
 import * as most from "most";
-import users from "./users";
-
 import {
   select,
   createEpicMiddleware,
   createStateStreamEnhancer
 } from "redux-most";
 
-const User = ({ user }) => {
-  return (
-    <div>
-      <h1>User Component</h1>
-      <h3> {user.name.first}</h3>
-      <h3> {user.email}</h3>
-      <img src={user.picture.large} alt={user.email} />
-    </div>
+const rootState = {
+  counter: 10,
+  users: []
+};
+
+//reducers
+const userReducer = (state = rootState, action) => {
+  switch (action.type) {
+    case "UPDATE_USERS":
+      return { ...state, users: action.payload };
+    default:
+      return state;
+  }
+};
+
+//epics
+export const usersEpic = (action$, store) => {
+  return action$.thru(select("FETCH_USER_LOAD")).flatMap(action =>
+    most
+      .fromPromise(fetch("https://randomuser.me/api/?results=2"))
+      .flatMap(d => most.fromPromise(d.json()))
+      .flatMap(d => {
+        return most.from([{ type: "UPDATE_USERS", payload: d.results }]);
+      })
+      .recoverWith(e => most.of({ type: "ERROR" }))
   );
 };
 
-const UserList = ({ users }) => users.map(user => <User user={user} />);
-
-const withUsers = AppComponent => {
-  const userList = users.results;
-  //data loader component
-  return <AppComponent users={userList} />;
+const UserProfile = ({ user }) => {
+  return (
+    <>
+      <div>
+        <img src={user.picture.medium} alt={user.name.first} />
+        <h1> {user.name.first}</h1>
+      </div>
+    </>
+  );
 };
 
-function App({ users }) {
+//action
+const fetchUser = () => {
+  return { type: "FETCH_USER_LOAD", payload: null };
+};
+
+const mapStateToProps = (state, ownProps) => {
+  return { count: state.counter };
+};
+
+const mapDispatchToProps = dispatch => {
+  return {
+    fetchUser: () => dispatch(fetchUser())
+  };
+};
+
+const User = ({ count, fetchUser }) => {
+  const users = useSelector(state => state.users);
+
+  return (
+    <>
+      <div> User List {count} </div>
+      <button onClick={fetchUser}>+++</button>
+
+      {users && users.map(user => <UserProfile key={user.email} user={user} />)}
+    </>
+  );
+};
+
+const withUsers = connect(mapStateToProps, mapDispatchToProps);
+
+const UserContainer = withUsers(User);
+
+function App() {
   return (
     <div className="App">
-      <h1> Our amazing App </h1>
-      <UserList users={users} />;
+      <h1>This is Redux observable app</h1>
+      <UserContainer />
     </div>
   );
 }
 
-export default () => withUsers(App);
+// SETUP
+const epicMiddleware = createEpicMiddleware(usersEpic);
+const composeEnhancers =
+  (typeof window !== "undefined" &&
+    window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__) ||
+  compose;
+
+const storeEnhancers = composeEnhancers(
+  createStateStreamEnhancer(epicMiddleware)
+);
+
+const store = createStore(userReducer, storeEnhancers);
+
+export default () => (
+  <Provider store={store}>
+    <App />
+  </Provider>
+);
